@@ -1,18 +1,17 @@
-import { keccak256 } from 'js-sha3'
+import { keccak256 } from 'https://esm.sh/js-sha3'
 import { saveRecord, saveBatchRecords, getDB, getAllRecords, clearAllRecords } from './db.js'
 
 function hashInput(input) {
   return '0x' + keccak256(input)
 }
 
-// Trong iframe: parent = main app. Trong popup: opener = main app.
 const sendToMain = (msg) => {
   const target = window.parent !== window ? window.parent : window.opener
-  target?.postMessage(msg, window.location.origin)
+  // Quan trọng: Dùng '*' cho targetOrigin để tránh lỗi mismatch origin khi deploy
+  target?.postMessage(msg, '*')
 }
 
 window.addEventListener('message', async (event) => {
-  if (event.origin !== window.location.origin) return
   const { type, id, payload } = event.data
 
   if (type === 'CLEAR_ALL') {
@@ -26,7 +25,6 @@ window.addEventListener('message', async (event) => {
     return
   }
 
-  // 1 item
   if (type === 'HASH_REQUEST') {
     try {
       const hash = hashInput(payload.input)
@@ -41,7 +39,6 @@ window.addEventListener('message', async (event) => {
     }
   }
 
-  // Batch
   if (type === 'HASH_BATCH_REQUEST') {
     const batchId = id
     const { items } = payload
@@ -57,12 +54,22 @@ window.addEventListener('message', async (event) => {
   }
 })
 
-// Khởi động: load DB → gửi WORKER_READY kèm toàn bộ records
 getDB()
   .then(async () => {
     const existingRecords = await getAllRecords()
+    // Cập nhật UI của trang worker để bạn thấy nó đã sẵn sàng
+    const statusEl = document.getElementById('status')
+    if (statusEl) {
+      statusEl.innerText = 'READY'
+      statusEl.style.color = '#4ade80'
+    }
     sendToMain({ type: 'WORKER_READY', payload: { existingRecords } })
   })
   .catch(err => {
     console.error('Worker error:', err)
+    const statusEl = document.getElementById('status')
+    if (statusEl) {
+      statusEl.innerText = 'ERROR: ' + err.message
+      statusEl.style.color = '#f87171'
+    }
   })
