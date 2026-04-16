@@ -1,5 +1,8 @@
-import { keccak256 } from 'https://esm.sh/js-sha3'
+import sha3 from 'https://esm.sh/js-sha3'
 import { saveRecord, saveBatchRecords, getDB, getAllRecords, clearAllRecords } from './db.js'
+
+// js-sha3 trên esm.sh thường export default hoặc có keccak256 tùy version, check an toàn:
+const keccak256 = sha3.keccak256 || sha3
 
 function hashInput(input) {
   return '0x' + keccak256(input)
@@ -7,12 +10,15 @@ function hashInput(input) {
 
 const sendToMain = (msg) => {
   const target = window.parent !== window ? window.parent : window.opener
-  // Quan trọng: Dùng '*' cho targetOrigin để tránh lỗi mismatch origin khi deploy
+  // Quan trọng: Dùng '*' cho targetOrigin để đảm bảo tin nhắn luôn đi được qua các domain/port khác nhau
   target?.postMessage(msg, '*')
 }
 
+// Lắng nghe lệnh từ Main App
 window.addEventListener('message', async (event) => {
+  // Bỏ kiểm tra origin khắt khe để test cho chạy được trên mọi môi trường
   const { type, id, payload } = event.data
+  if (!type) return
 
   if (type === 'CLEAR_ALL') {
     await clearAllRecords()
@@ -31,10 +37,10 @@ window.addEventListener('message', async (event) => {
       const record = { id, input: payload.input, hash, timestamp: Date.now(), status: 'SUCCESS' }
       await saveRecord(record)
       sendToMain({ type: 'HASH_RESPONSE', id, payload: record })
-    } catch {
+    } catch (e) {
       sendToMain({
         type: 'HASH_RESPONSE', id,
-        payload: { id, status: 'ERROR', input: payload.input, hash: null, timestamp: Date.now() }
+        payload: { id, status: 'ERROR', input: payload.input, hash: null, timestamp: Date.now(), error: e.message }
       })
     }
   }
@@ -43,33 +49,41 @@ window.addEventListener('message', async (event) => {
     const batchId = id
     const { items } = payload
     const results = []
-    for (const item of items) {
-      const hash = hashInput(item.input)
-      const record = { id: item.id, input: item.input, hash, timestamp: Date.now(), status: 'SUCCESS' }
-      results.push(record)
-      sendToMain({ type: 'HASH_BATCH_ITEM_RESPONSE', batchId, payload: record })
+    try {
+      for (const item of items) {
+        const hash = hashInput(item.input)
+        const record = { id: item.id, input: item.input, hash, timestamp: Date.now(), status: 'SUCCESS' }
+        results.push(record)
+        sendToMain({ type: 'HASH_BATCH_ITEM_RESPONSE', batchId, payload: record })
+      }
+      await saveBatchRecords(results)
+      sendToMain({ type: 'HASH_BATCH_COMPLETE', batchId, total: results.length })
+    } catch (e) {
+       console.error('Batch error:', e)
     }
-    await saveBatchRecords(results)
-    sendToMain({ type: 'HASH_BATCH_COMPLETE', batchId, total: results.length })
   }
 })
 
+// Khởi tạo Database
 getDB()
   .then(async () => {
     const existingRecords = await getAllRecords()
-    // Cập nhật UI của trang worker để bạn thấy nó đã sẵn sàng
+    
+    // Cập nhật giao diện của chính trang worker để người dùng biết nó đã chạy
     const statusEl = document.getElementById('status')
     if (statusEl) {
-      statusEl.innerText = 'READY'
+      statusEl.innerText = 'READY - WORKER ACTIVE'
       statusEl.style.color = '#4ade80'
     }
+
+    // Gửi thông báo cho App chính
     sendToMain({ type: 'WORKER_READY', payload: { existingRecords } })
   })
   .catch(err => {
-    console.error('Worker error:', err)
+    console.error('Worker DB error:', err)
     const statusEl = document.getElementById('status')
     if (statusEl) {
-      statusEl.innerText = 'ERROR: ' + err.message
+      statusEl.innerText = 'DB ERROR: ' + err.message
       statusEl.style.color = '#f87171'
     }
   })

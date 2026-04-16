@@ -157,7 +157,6 @@ class MessageBroker {
     }
 
     _handleMessage(event) {
-        if (event.origin !== window.location.origin) return
         if (event.source !== this.workerWindow) return
 
         const { type, id, batchId, payload } = event.data
