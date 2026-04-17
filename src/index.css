@@ -20,3 +20,7 @@
 ::-webkit-scrollbar-track { background: #0c0c1d; }
 ::-webkit-scrollbar-thumb { background: #464554; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #908fa0; }
+
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

@@ -65,11 +65,11 @@ export function InputPanel({ isWorkerReady, addPending, addManyPending, updateRe
   const percent = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 items-start">
+    <div className="flex flex-col xl:flex-row gap-8 items-start">
       {/* Left: input + batch */}
       <div className="flex-1 w-full">
         <label className="block text-primary font-label text-[10px] uppercase tracking-[0.2em] mb-4">
-          Input
+          Input Sequence
         </label>
         <div className="relative group">
           <textarea
@@ -79,7 +79,7 @@ export function InputPanel({ isWorkerReady, addPending, addManyPending, updateRe
             disabled={!isWorkerReady}
             placeholder="Enter payload for cryptographic processing..."
             rows={3}
-            className="w-full bg-[#0c0c1d] border border-outline-variant/30 rounded-2xl p-4 text-on-surface data-mono focus:outline-none focus:ring-1 focus:ring-surface-tint focus:border-surface-tint transition-all placeholder:text-on-surface-variant/30 resize-none disabled:opacity-40"
+            className="w-full bg-[#0c0c1d] border border-outline-variant/30 rounded-2xl p-4 text-on-surface data-mono focus:outline-none focus:ring-1 focus:ring-surface-tint focus:border-surface-tint transition-all placeholder:text-on-surface-variant/30 resize-none disabled:opacity-40 text-sm"
           />
           {text && (
             <button
@@ -91,34 +91,38 @@ export function InputPanel({ isWorkerReady, addPending, addManyPending, updateRe
           )}
         </div>
 
-        {/* Batch */}
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <span className="text-[10px] text-on-surface-variant uppercase tracking-widest mr-2">QUICK GENERATE:</span>
-          {QUICK_OPTIONS.map(opt => (
-            <button
-              key={opt.count}
-              onClick={() => handleQuickGenerate(opt.count)}
-              disabled={!isWorkerReady || isProcessing}
-              className="bg-surface-container-low hover:bg-surface-container-high px-4 py-2 rounded-xl text-xs font-label text-on-surface transition-all border border-outline-variant/10 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {opt.label}
-            </button>
-          ))}
+        {/* Batch scale */}
+        <div className="mt-6 flex flex-wrap items-center gap-2 md:gap-3">
+          <span className="text-[10px] text-on-surface-variant uppercase tracking-widest w-full sm:w-auto">
+            Batch scale:
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_OPTIONS.map(opt => (
+              <button
+                key={opt.count}
+                onClick={() => handleQuickGenerate(opt.count)}
+                disabled={!isWorkerReady || isProcessing}
+                className="bg-surface-container-low hover:bg-surface-container-high px-4 py-2 rounded-xl text-xs font-label text-on-surface transition-all border border-outline-variant/10 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Right: HASH button + system load */}
-      <div className="w-full md:w-80 flex flex-col gap-6">
+      <div className="w-full xl:w-80 flex flex-col sm:flex-row xl:flex-col gap-4 md:gap-6">
         <button
           onClick={handleSingleHash}
           disabled={!isWorkerReady || !text.trim()}
-          className="w-full bg-gradient-to-br from-primary to-primary-container h-24 rounded-2xl flex items-center justify-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          className="flex-1 bg-gradient-to-br from-primary to-primary-container h-20 md:h-24 rounded-2xl flex items-center justify-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
-          <span className="material-symbols-outlined text-4xl text-on-primary">security</span>
-          <span className="text-2xl font-black tracking-tight text-on-primary">HASH</span>
+          <span className="material-symbols-outlined text-3xl md:text-4xl text-on-primary">security</span>
+          <span className="text-xl md:text-2xl font-black tracking-tight text-on-primary">HASH</span>
         </button>
 
-        <div className="bg-[#0c0c1d] p-4 rounded-2xl border border-outline-variant/20">
+        <div className="flex-1 bg-[#0c0c1d] p-4 rounded-2xl border border-outline-variant/20">
           <div className="flex justify-between items-center mb-2">
             <span className="text-[10px] uppercase tracking-widest text-on-surface-variant">System Load</span>
             <span className="text-[10px] data-mono text-primary">{percent}%</span>

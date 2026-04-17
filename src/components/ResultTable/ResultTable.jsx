@@ -11,7 +11,7 @@ const FILTERS = ['All', 'Success', 'Pending', 'Error']
 const STATUS_CFG = {
   SUCCESS: { cls: 'bg-green-900/40 text-green-400 border border-green-700/30', label: 'SUCCESS' },
   PENDING: { cls: 'bg-amber-900/30 text-amber-400 border border-amber-700/30', label: 'PENDING' },
-  ERROR:   { cls: 'bg-red-900/30 text-red-400 border border-red-700/30', label: 'FAILED' },
+  ERROR: { cls: 'bg-red-900/30 text-red-400 border border-red-700/30', label: 'FAILED' },
 }
 
 const Row = memo(function Row({ record: r, onRetry, style }) {
@@ -97,20 +97,19 @@ export function ResultTable({ records, onRetry }) {
   return (
     <div>
       {/* Header row */}
-      <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-black tracking-tight">Active Registries</h2>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+          <h2 className="text-xl md:text-2xl font-black tracking-tight whitespace-nowrap">Active Registries</h2>
           {/* Filter tabs */}
-          <div className="flex bg-surface-container-lowest rounded-xl p-1 border border-outline-variant/10">
+          <div className="flex bg-surface-container-lowest rounded-xl p-1 border border-outline-variant/10 overflow-x-auto no-scrollbar w-full sm:w-auto">
             {FILTERS.map(f => (
               <button
                 key={f}
                 onClick={() => handleFilter(f)}
-                className={`px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all ${
-                  filterStatus === f
+                className={`px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${filterStatus === f
                     ? 'bg-surface-container-highest text-primary'
                     : 'text-on-surface-variant hover:text-on-surface'
-                }`}
+                  }`}
               >
                 {f}
               </button>
@@ -132,48 +131,51 @@ export function ResultTable({ records, onRetry }) {
       </div>
 
       {/* Table */}
-      <div className="bg-[#0f0f1e] rounded-[1.5rem] border border-outline-variant/15 overflow-hidden">
-        {/* Head */}
-        <div
-          className="bg-[#0c0c1d] border-b border-outline-variant/10"
-          style={{ display: 'grid', gridTemplateColumns: COLS }}
-        >
-          {['ID', 'Input Sequence', 'Hash Digest', 'Timestamp', 'Status'].map(col => (
-            <div key={col} className="px-6 py-4 text-[10px] font-label uppercase tracking-widest text-on-surface-variant text-left">
-              {col}
-            </div>
-          ))}
-        </div>
+      <div className="bg-[#0f0f1e] rounded-[1rem] md:rounded-[1.5rem] border border-outline-variant/15 overflow-hidden">
 
-        {/* Virtual body */}
-        <div
-          ref={parentRef}
-          style={{ height: VIEWPORT_HEIGHT, overflowY: 'auto', willChange: 'transform' }}
-        >
-          <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-            {virtualizer.getVirtualItems().map(vRow => {
-              const r = paginated[vRow.index]
-              if (!r) return null
-              return (
-                <Row
-                  key={r.id}
-                  record={r}
-                  onRetry={onRetry}
-                  style={{
-                    position: 'absolute', top: 0, left: 0,
-                    width: '100%', height: ROW_HEIGHT,
-                    transform: `translateY(${vRow.start}px)`,
-                    display: 'grid', gridTemplateColumns: COLS,
-                    contain: 'layout paint',
-                  }}
-                />
-              )
-            })}
+        <div className="overflow-x-auto no-scrollbar">
+
+          <div
+            className="bg-[#0c0c1d] border-b border-outline-variant/10"
+            style={{ display: 'grid', gridTemplateColumns: COLS, minWidth: '680px' }}
+          >
+            {['ID', 'Input Sequence', 'Hash Digest', 'Timestamp', 'Status'].map(col => (
+              <div key={col} className="px-6 py-4 text-[10px] font-label uppercase tracking-widest text-on-surface-variant text-left">
+                {col}
+              </div>
+            ))}
+          </div>
+
+          {/* Virtual body */}
+          <div
+            ref={parentRef}
+            style={{ height: VIEWPORT_HEIGHT, overflowY: 'auto', overflowX: 'hidden', willChange: 'transform', minWidth: '680px' }}
+          >
+            <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+              {virtualizer.getVirtualItems().map(vRow => {
+                const r = paginated[vRow.index]
+                if (!r) return null
+                return (
+                  <Row
+                    key={r.id}
+                    record={r}
+                    onRetry={onRetry}
+                    style={{
+                      position: 'absolute', top: 0, left: 0,
+                      width: '100%', height: ROW_HEIGHT,
+                      transform: `translateY(${vRow.start}px)`,
+                      display: 'grid', gridTemplateColumns: COLS,
+                      contain: 'layout paint',
+                    }}
+                  />
+                )
+              })}
+            </div>
           </div>
         </div>
 
         {/* Footer / Pagination */}
-        <footer className="px-6 py-4 bg-[#0c0c1d] flex justify-between items-center border-t border-outline-variant/10">
+        <footer className="px-4 md:px-6 py-4 bg-[#0c0c1d] flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-outline-variant/10">
           <span className="text-[10px] text-on-surface-variant font-label">
             SHOWING {((safePage - 1) * PAGE_SIZE + 1).toLocaleString()}–{Math.min(safePage * PAGE_SIZE, filtered.length).toLocaleString()} OF {filtered.length.toLocaleString()} ITEMS
           </span>
@@ -190,14 +192,13 @@ export function ResultTable({ records, onRetry }) {
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const p = safePage <= 3 ? i + 1
                   : safePage >= totalPages - 2 ? totalPages - 4 + i
-                  : safePage - 2 + i
+                    : safePage - 2 + i
                 return p >= 1 && p <= totalPages ? (
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${
-                      p === safePage ? 'bg-primary text-on-primary' : 'bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant'
-                    }`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${p === safePage ? 'bg-primary text-on-primary' : 'bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant'
+                      }`}
                   >
                     {p}
                   </button>
